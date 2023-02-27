@@ -11,21 +11,43 @@ class Downloader final {
   Downloader() = default;
   ~Downloader() = default;
 
+  void SetBdstoken();
+  void SetShareidAndUk();
+  void SetRandsk();
+  void SetFsid();
+  void SetTimestampAndSign();
+  void SetDlink();
+  void SetLocationLink();
+
+ private:
+  std::string bdstoken_{};
+  std::string uk_{};
+  std::string shareid_{};
+  std::string randsk_{};
+  std::string fs_id_{};
+  std::string timestamp_{};
+  std::string sign_{};
+  std::string dlink_{};
+  std::string location_{};
+
   std::string GetBdstoken();
   std::string GetShareidAndUk();
   std::string GetRandsk();
   std::string GetFsid();
   std::string GetTimestampAndSign();
+  std::string GetDlink();
+  std::string GetLocationLink();
 
- private:
   cpr::AsyncWrapper<std::string, false> GetResultAsync(const std::string& url,
                                                        cpr::Header Header);
   cpr::AsyncWrapper<std::string, false> PostResultAsync(const std::string& url,
                                                         cpr::Header Header,
                                                         cpr::Payload payload);
-  cpr::Url url = cpr::Url{
-      "https://pan.baidu.com/api/"
-      "loginStatus?clienttype=0&app_id=250528&web=1"};
+
+  std::string long_url = "1RiOVjWgK3Rlrtsyj0k0iSA";
+
+  std::string shareid_uk_url_str =
+      "https://pan.baidu.com/api/shorturlinfo?shorturl=" + long_url;
   std::string url_str{
       "https://pan.baidu.com/api/"
       "loginStatus?clienttype=0&app_id=250528&web=1"};
@@ -38,9 +60,13 @@ class Downloader final {
        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, "
        "like Gecko) Chrome/110.0.0.0 Safari/537.36"}};
 
+  cpr::Header base_header_refer{
+      {"User-Agent",
+       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, "
+       "like Gecko) Chrome/110.0.0.0 Safari/537.36"}};
+
   cpr::Payload paylaod{{"pwd", "ezuk"}};
 
-  std::string long_url = "1RiOVjWgK3Rlrtsyj0k0iSA";
   std::string password = "ezuk";
   std::string user_cookes =
       "BDUSS="
@@ -59,5 +85,11 @@ class Downloader final {
        "(KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"},
       {"Cookie", user_cookes},
   };
+  std::string url_fs_id =
+      "https://pan.baidu.com/share/"
+      "list?order=name&desc=1&showempty=0&web=1&page=1&num=100&clienttype=0&"
+      "shorturl=" +
+      shorturl + "&dir=" + dir;
+  std::string user_cookies_fs_id = "BDCLND=";
 };
 }  // namespace baiduyun
