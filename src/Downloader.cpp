@@ -8,7 +8,7 @@ namespace baiduyun {
 
 void Downloader::SetBdstoken() {
   bdstoken_ = nlohmann::json::parse(GetBdstoken())["login_info"]["bdstoken"];
-  std::cout << bdstoken_ << std::endl;
+  std::cout << "bdstoken_: " << bdstoken_ << std::endl;
 }
 void Downloader::SetShareidAndUk() {
   std::string shareid_and_uk_json = GetShareidAndUk();
@@ -17,6 +17,8 @@ void Downloader::SetShareidAndUk() {
     auto j_uk = nlohmann::json::parse(shareid_and_uk_json)["uk"];
     shareid_ = j_shareid.dump();
     uk_ = j_uk.dump();
+    std::cout << "shareid_: " << shareid_ << std::endl;
+    std::cout << "uk_: " << uk_ << std::endl;
   } catch (const std::exception& e) {
     std::cout << "SetShareidAndUk fault" << std::endl;
   }
@@ -27,36 +29,25 @@ void Downloader::SetRandsk() {
 }
 void Downloader::SetFsid() {
   std::string fs_id_json = GetFsid();
-
-  std::cout << fs_id_json << std::endl << std::endl << std::endl;
-
-  std::cout << nlohmann::json::parse(fs_id_json)["list"] << std::endl;
-
-  std::cout << nlohmann::json::parse(fs_id_json)["list"] << std::endl;
-  // 遍历list字段
-  for (const auto& item : nlohmann::json::parse(fs_id_json)["list"].array()) {
-    // 如果server_filename是"idmchslsttb.zip"
-    std::cout << "server_filename" << item["server_filename"] << std::endl;
-
-    std::cout << "file_name" << file_name << std::endl;
-    std::cout << "item[\"server_filename\"].dump()"
-              << item["server_filename"].dump() << std::endl;
-
-    if (item["server_filename"].dump() == file_name) {
-      // 输出对应的fs_id
-      std::cout << "fs_id: " << item["fs_id"] << std::endl;
-      break;
+  auto item = nlohmann::json::parse(fs_id_json)["list"];
+  for (size_t i = 0; i < item.size(); ++i) {
+    auto tmp_str = item.at(i)["server_filename"].dump();
+    if (tmp_str.substr(1, tmp_str.length() - 2) == file_name) {
+      fs_id_ = item.at(i)["fs_id"].dump();
+      std::cout << "fs_id_: " << fs_id_ << std::endl;
     }
   }
-  for (auto it = nlohmann::json::parse(fs_id_json)["list"].begin();
-       it != nlohmann::json::parse(fs_id_json)["list"].end();++it)
-       {
-    std::cout << 
-       }
 }
-void Downloader::SetTimestampAndSign() {}
+void Downloader::SetTimestampAndSign() {
+  auto tmp_str = nlohmann::json::parse(GetTimestampAndSign());
+  timestamp_ = tmp_str["data"]["timestamp"].dump();
+  sign_ = tmp_str["data"]["sign"].dump();
+  sign_ = sign_.substr(1, sign_.length() - 2);
+  std::cout << "timestamp_: " << timestamp_ << std::endl;
+  std::cout << "sign_: " << sign_ << std::endl;
+}
 
-void baiduyun::Downloader::SetDlink() {}
+void baiduyun::Downloader::SetDlink() { std::cout << GetDlink() << std::endl; }
 
 void baiduyun::Downloader::SetLocationLink() {}
 
@@ -89,9 +80,61 @@ std::string Downloader::GetFsid() {
   Fsid.wait();
   return Fsid.get();
 }
-std::string Downloader::GetTimestampAndSign() { return std::string(); }
+std::string Downloader::GetTimestampAndSign() {
+  auto timestampandsign =
+      "https://pan.baidu.com/share/"
+      "tplconfig?surl=" +
+      long_url +
+      "&fields=sign,timestamp&channel=chunlei&web=1&"
+      "app_id=250528&bdstoken=" +
+      bdstoken_ + "&clienttype=0";
+  auto TimestampAndSign = this->GetResultAsync(timestampandsign, header);
+  TimestampAndSign.wait();
+  return TimestampAndSign.get();
+}
 
-std::string baiduyun::Downloader::GetDlink() { return std::string(); }
+std::string baiduyun::Downloader::GetDlink() {
+  auto url_dlink =
+      "https://pan.baidu.com/api/"
+      "sharedownload?app_id=250528&channel=chunlei&clienttype=12&sign=" +
+      sign_ +
+      "&"
+      "timestamp=" +
+      timestamp_ + "&web=1";
+
+  cpr::Header dlink_header = cpr::Header{
+      {"User-Agent",
+       "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"},
+      {"Host", "pan.baidu.com"},
+      {"Cookie", user_cookes},
+      {"Referer", "pan.baidu.com"}};
+
+  cpr::Payload tmp_payload{
+      {"encrypt", "0"},
+      {"extra", "%7B%22sekey%22%3A%22" + randsk_ + "%22%7D"},
+      {"product", "share"},
+      {"uk", uk_},
+      {"primaryid", shareid_},
+      {"fid_list", "%5B" + fs_id_ + "%5D"}};
+  tmp_payload.Add({"encrypt", "0"});
+  tmp_payload.Add({"extra", "%7B%22sekey%22%3A%22" + randsk_ + "%22%7D"});
+  tmp_payload.Add({"product", "share"});
+  tmp_payload.Add({"uk", uk_});
+  tmp_payload.Add({"primaryid", shareid_});
+  tmp_payload.Add({"fid_list", "%5B" + fs_id_ + "%5D"});
+
+  std::cout << "randsk_: " << randsk_ << std::endl;
+  std::cout << "uk_: " << uk_ << std::endl;
+  std::cout << "shareid_: " << shareid_ << std::endl;
+  std::cout << "fs_id_: " << fs_id_ << std::endl;
+  std::cout << "user_cookes: " << user_cookes << std::endl;
+
+  std::cout << "url_get_rds: " << url_dlink << std::endl;
+  auto Dlink_data = this->PostResultAsync(url_dlink, dlink_header, tmp_payload);
+  Dlink_data.wait();
+  return Dlink_data.get();
+}
 
 std::string baiduyun::Downloader::GetLocationLink() { return std::string(); }
 

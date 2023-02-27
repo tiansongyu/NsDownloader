@@ -13,6 +13,8 @@ int main() {
   downloader->SetShareidAndUk();
   downloader->SetRandsk();
   downloader->SetFsid();
+  downloader->SetTimestampAndSign();
+  downloader->SetDlink();
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
   return 0;
