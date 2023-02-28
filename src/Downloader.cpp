@@ -1,3 +1,5 @@
+// Copyright [2023] <Copyright tiansongyu>
+
 #include "../include/Downloader.hpp"
 
 #include <fstream>
@@ -8,7 +10,46 @@
 #include "../include/json.hpp"
 namespace baiduyun {
 
-Downloader::Downloader() {}
+Downloader::Downloader(std::string long_url, std::string pwd,
+                       std::string user_cookes, std::string dir,
+                       std::string file_name)
+    : long_url_(long_url),
+      pwd_(pwd),
+      user_cookes_(user_cookes),
+      dir_(dir),
+      file_name_(file_name) {
+  short_url_ = long_url.substr(1, long_url.length() - 1);
+  std::cout << "short_url_: " << short_url_ << std::endl;
+  body_randsk_ = {"pwd=" + pwd_};
+
+  shareid_uk_url_str_ =
+      "https://pan.baidu.com/api/shorturlinfo?shorturl=" + long_url_;
+
+  header_ = cpr::Header{
+      {"User-Agent",
+       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+       "(KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"},
+      {"Cookie", user_cookes_},
+  };
+
+  url_fs_id_ =
+      "https://pan.baidu.com/share/"
+      "list?order=name&desc=1&showempty=0&web=1&page=1&num=100&clienttype=0&"
+      "shorturl=" +
+      short_url_ + "&dir=" + dir_;
+
+  init();
+}
+
+void Downloader::init() {
+  this->SetBdstoken();
+  this->SetShareidAndUk();
+  this->SetRandsk();
+  this->SetFsid();
+  this->SetTimestampAndSign();
+  this->SetDlink();
+  this->SetLocationLink();
+}
 
 void Downloader::SetBdstoken() {
   bdstoken_ = nlohmann::json::parse(GetBdstoken())["login_info"]["bdstoken"];
@@ -94,19 +135,19 @@ bool Downloader::StartDownload() {
   return false;
 }
 std::string Downloader::GetBdstoken() {
-  auto return_data = this->GetResultAsync(url_str, header);
+  auto return_data = this->GetResultAsync(url_str_, header_);
   return_data.wait();
   return return_data.get();
 }
 std::string Downloader::GetShareidAndUk() {
   auto shareidanduk =
-      this->GetResultAsync(shareid_uk_url_str, base_header_refer);
+      this->GetResultAsync(shareid_uk_url_str_, base_header_refer_);
   shareidanduk.wait();
   return shareidanduk.get();
 }
 std::string Downloader::GetRandsk() {
   auto post_return_data =
-      this->PostResultAsync(url_get_rds, header_refer, body_randsk);
+      this->PostResultAsync(url_get_rds_, header_refer_, body_randsk_);
   post_return_data.wait();
   return post_return_data.get();
 }
@@ -115,10 +156,10 @@ std::string Downloader::GetFsid() {
       {"User-Agent",
        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
        "(KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"},
-      {"Cookie", user_cookies_fs_id + randsk_},
+      {"Cookie", user_cookies_fs_id_ + randsk_},
   };
 
-  auto Fsid = this->GetResultAsync(url_fs_id, header_Fsid);
+  auto Fsid = this->GetResultAsync(url_fs_id_, header_Fsid);
   Fsid.wait();
   return Fsid.get();
 }
@@ -126,11 +167,11 @@ std::string Downloader::GetTimestampAndSign() {
   cpr::Url timestampandsign{
       "https://pan.baidu.com/share/"
       "tplconfig?surl=" +
-      long_url +
+      long_url_ +
       "&fields=sign,timestamp&channel=chunlei&web=1&"
       "app_id=250528&bdstoken=" +
       bdstoken_ + "&clienttype=0"};
-  auto TimestampAndSign = this->GetResultAsync(timestampandsign, header);
+  auto TimestampAndSign = this->GetResultAsync(timestampandsign, header_);
   TimestampAndSign.wait();
   return TimestampAndSign.get();
 }
@@ -149,7 +190,7 @@ std::string baiduyun::Downloader::GetDlink() {
        "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"},
       {"Host", "pan.baidu.com"},
-      {"Cookie", user_cookes},
+      {"Cookie", user_cookes_},
       {"Referer", "pan.baidu.com"}};
 
   cpr::Body body_dlink{"encrypt=0&extra=%7B%22sekey%22%3A%22" + randsk_ +
@@ -162,7 +203,7 @@ std::string baiduyun::Downloader::GetDlink() {
   std::cout << "uk_: " << uk_ << std::endl;
   std::cout << "shareid_: " << shareid_ << std::endl;
   std::cout << "fs_id_: " << fs_id_ << std::endl;
-  std::cout << "user_cookes: " << user_cookes << std::endl;
+  std::cout << "user_cookes: " << user_cookes_ << std::endl;
 
   std::cout << "url_get_rds: " << url_dlink << std::endl;
   auto Dlink_data = this->PostResultAsync(url_dlink, dlink_header, body_dlink);
