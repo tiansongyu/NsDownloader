@@ -1,14 +1,22 @@
 #include "../include/Downloader.hpp"
 
+#include <fstream>
 #include <iostream>
+#include <regex>
 #include <string>
 
 #include "../include/json.hpp"
 namespace baiduyun {
 
+Downloader::Downloader() {}
+
 void Downloader::SetBdstoken() {
   bdstoken_ = nlohmann::json::parse(GetBdstoken())["login_info"]["bdstoken"];
   std::cout << "bdstoken_: " << bdstoken_ << std::endl;
+}
+void Downloader::SetRandsk() {
+  randsk_ = nlohmann::json::parse(GetRandsk())["randsk"];
+  std::cout << "randsk_: " << randsk_ << std::endl;
 }
 void Downloader::SetShareidAndUk() {
   std::string shareid_and_uk_json = GetShareidAndUk();
@@ -23,16 +31,13 @@ void Downloader::SetShareidAndUk() {
     std::cout << "SetShareidAndUk fault" << std::endl;
   }
 }
-void Downloader::SetRandsk() {
-  randsk_ = nlohmann::json::parse(GetRandsk())["randsk"];
-  std::cout << "randsk_: " << randsk_ << std::endl;
-}
+
 void Downloader::SetFsid() {
   std::string fs_id_json = GetFsid();
   auto item = nlohmann::json::parse(fs_id_json)["list"];
   for (size_t i = 0; i < item.size(); ++i) {
     auto tmp_str = item.at(i)["server_filename"].dump();
-    if (tmp_str.substr(1, tmp_str.length() - 2) == file_name) {
+    if (tmp_str.substr(1, tmp_str.length() - 2) == file_name_) {
       fs_id_ = item.at(i)["fs_id"].dump();
       std::cout << "fs_id_: " << fs_id_ << std::endl;
     }
@@ -47,10 +52,47 @@ void Downloader::SetTimestampAndSign() {
   std::cout << "sign_: " << sign_ << std::endl;
 }
 
-void baiduyun::Downloader::SetDlink() { std::cout << GetDlink() << std::endl; }
+void baiduyun::Downloader::SetDlink() {
+  std::string dlink_json = GetDlink();
+  auto item = nlohmann::json::parse(dlink_json)["list"].at(0)["dlink"].dump();
+  dlink_ = item.substr(1, item.length() - 2);
 
-void baiduyun::Downloader::SetLocationLink() {}
+  std::cout << dlink_ << std::endl;
+}
 
+void baiduyun::Downloader::SetLocationLink() {
+  std::string tmp_locationlink = GetLocationLink();
+  std::regex re("Location:\\s+(.+)");
+  std::smatch match;
+  if (std::regex_search(tmp_locationlink, match, re)) {
+    location_ = match[1];
+  }
+  std::cout << "location: " << location_ << std::endl;
+}
+
+bool Downloader::StartDownload() {
+  cpr::Session session;
+  std::ofstream outFile(file_name_, std::ios::binary);
+
+  session.SetUrl(location_);
+  file_size_ = session.GetDownloadFileLength();
+  file_current_index_ = 0;
+  auto r = session.Download(cpr::WriteCallback(
+      [this](std::string data, intptr_t outFile) -> bool {
+        std::ofstream* outFile_tmp = reinterpret_cast<std::ofstream*>(outFile);
+        outFile_tmp->write(data.data(), data.size());
+        file_current_index_ += data.size();
+        progress_ = file_current_index_ * 100 / file_size_;
+        std::cout << progress_ << "%" << std::endl;
+        return true;
+      },
+      reinterpret_cast<intptr_t>(&outFile)));
+  outFile.close();
+  file_size_ = 0;
+  progress_ = 0.0F;
+
+  return false;
+}
 std::string Downloader::GetBdstoken() {
   auto return_data = this->GetResultAsync(url_str, header);
   return_data.wait();
@@ -81,26 +123,26 @@ std::string Downloader::GetFsid() {
   return Fsid.get();
 }
 std::string Downloader::GetTimestampAndSign() {
-  auto timestampandsign =
+  cpr::Url timestampandsign{
       "https://pan.baidu.com/share/"
       "tplconfig?surl=" +
       long_url +
       "&fields=sign,timestamp&channel=chunlei&web=1&"
       "app_id=250528&bdstoken=" +
-      bdstoken_ + "&clienttype=0";
+      bdstoken_ + "&clienttype=0"};
   auto TimestampAndSign = this->GetResultAsync(timestampandsign, header);
   TimestampAndSign.wait();
   return TimestampAndSign.get();
 }
 
 std::string baiduyun::Downloader::GetDlink() {
-  auto url_dlink =
+  cpr::Url url_dlink{
       "https://pan.baidu.com/api/"
       "sharedownload?app_id=250528&channel=chunlei&clienttype=12&sign=" +
       sign_ +
       "&"
       "timestamp=" +
-      timestamp_ + "&web=1";
+      timestamp_ + "&web=1"};
 
   cpr::Header dlink_header = cpr::Header{
       {"User-Agent",
@@ -116,7 +158,6 @@ std::string baiduyun::Downloader::GetDlink() {
                        uk_ + "&primaryid=" + shareid_ + "&fid_list=%5B" +
                        fs_id_ + "%5D"};
 
-
   std::cout << "randsk_: " << randsk_ << std::endl;
   std::cout << "uk_: " << uk_ << std::endl;
   std::cout << "shareid_: " << shareid_ << std::endl;
@@ -129,10 +170,13 @@ std::string baiduyun::Downloader::GetDlink() {
   return Dlink_data.get();
 }
 
-std::string baiduyun::Downloader::GetLocationLink() { return std::string(); }
+std::string baiduyun::Downloader::GetLocationLink() {
+  cpr::Response r = cpr::Head(cpr::Url{dlink_});
+  return r.raw_header;
+}
 
 cpr::AsyncWrapper<std::string, false> Downloader::GetResultAsync(
-    const std::string& url, cpr::Header Header) {
+    const cpr::Url& url, const cpr::Header& Header) {
   auto response = cpr::GetCallback(
       [](cpr::Response r) {
         try {
@@ -141,13 +185,12 @@ cpr::AsyncWrapper<std::string, false> Downloader::GetResultAsync(
           return r.text;
         }
       },
-      cpr::Url{url}, Header,
-      cpr::HttpVersion{cpr::HttpVersionCode::VERSION_2_0_TLS});
+      url, Header, cpr::HttpVersion{cpr::HttpVersionCode::VERSION_2_0_TLS});
   return response;
 }
 
 cpr::AsyncWrapper<std::string, false> Downloader::PostResultAsync(
-    const std::string& url, cpr::Header Header, cpr::Body body) {
+    const cpr::Url& url, const cpr::Header& Header, const cpr::Body& body) {
   auto response = cpr::PostCallback(
       [](cpr::Response r) {
         try {
@@ -156,7 +199,7 @@ cpr::AsyncWrapper<std::string, false> Downloader::PostResultAsync(
           return r.text;
         }
       },
-      cpr::Url{url}, Header, body,
+      url, Header, body,
       cpr::HttpVersion{cpr::HttpVersionCode::VERSION_2_0_TLS});
   return response;
 }

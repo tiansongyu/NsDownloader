@@ -15,7 +15,9 @@ int main() {
   downloader->SetFsid();
   downloader->SetTimestampAndSign();
   downloader->SetDlink();
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  downloader->SetLocationLink();
+  downloader->StartDownload();
+  std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
   return 0;
 }

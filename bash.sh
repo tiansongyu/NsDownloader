@@ -92,7 +92,7 @@ echo "dlink is $dlink"
 ###################################################################################################
 # 6.下载文件
 
-curl -s -f -I $dlink >final_url.txt
+curl -s -f  $dlink >final_url.txt
 # wget -U LogStatistic -i $dlink -O $file_name
 location=$(grep -oP 'Location: \K.*' <final_url.txt)
 echo $location >final_url_2.txt
