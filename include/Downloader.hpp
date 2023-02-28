@@ -42,7 +42,7 @@ class Downloader final {
                                                        cpr::Header Header);
   cpr::AsyncWrapper<std::string, false> PostResultAsync(const std::string& url,
                                                         cpr::Header Header,
-                                                        cpr::Payload payload);
+                                                        cpr::Body body);
 
   std::string long_url = "1RiOVjWgK3Rlrtsyj0k0iSA";
 
@@ -65,7 +65,7 @@ class Downloader final {
        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, "
        "like Gecko) Chrome/110.0.0.0 Safari/537.36"}};
 
-  cpr::Payload paylaod{{"pwd", "ezuk"}};
+  cpr::Body body_randsk{"pwd=ezuk"};
 
   std::string password = "ezuk";
   std::string user_cookes =

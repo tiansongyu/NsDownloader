@@ -64,7 +64,7 @@ std::string Downloader::GetShareidAndUk() {
 }
 std::string Downloader::GetRandsk() {
   auto post_return_data =
-      this->PostResultAsync(url_get_rds, header_refer, paylaod);
+      this->PostResultAsync(url_get_rds, header_refer, body_randsk);
   post_return_data.wait();
   return post_return_data.get();
 }
@@ -110,19 +110,12 @@ std::string baiduyun::Downloader::GetDlink() {
       {"Cookie", user_cookes},
       {"Referer", "pan.baidu.com"}};
 
-  cpr::Payload tmp_payload{
-      {"encrypt", "0"},
-      {"extra", "%7B%22sekey%22%3A%22" + randsk_ + "%22%7D"},
-      {"product", "share"},
-      {"uk", uk_},
-      {"primaryid", shareid_},
-      {"fid_list", "%5B" + fs_id_ + "%5D"}};
-  tmp_payload.Add({"encrypt", "0"});
-  tmp_payload.Add({"extra", "%7B%22sekey%22%3A%22" + randsk_ + "%22%7D"});
-  tmp_payload.Add({"product", "share"});
-  tmp_payload.Add({"uk", uk_});
-  tmp_payload.Add({"primaryid", shareid_});
-  tmp_payload.Add({"fid_list", "%5B" + fs_id_ + "%5D"});
+  cpr::Body body_dlink{"encrypt=0&extra=%7B%22sekey%22%3A%22" + randsk_ +
+                       "%22%7D&product="
+                       "share&uk=" +
+                       uk_ + "&primaryid=" + shareid_ + "&fid_list=%5B" +
+                       fs_id_ + "%5D"};
+
 
   std::cout << "randsk_: " << randsk_ << std::endl;
   std::cout << "uk_: " << uk_ << std::endl;
@@ -131,7 +124,7 @@ std::string baiduyun::Downloader::GetDlink() {
   std::cout << "user_cookes: " << user_cookes << std::endl;
 
   std::cout << "url_get_rds: " << url_dlink << std::endl;
-  auto Dlink_data = this->PostResultAsync(url_dlink, dlink_header, tmp_payload);
+  auto Dlink_data = this->PostResultAsync(url_dlink, dlink_header, body_dlink);
   Dlink_data.wait();
   return Dlink_data.get();
 }
@@ -154,7 +147,7 @@ cpr::AsyncWrapper<std::string, false> Downloader::GetResultAsync(
 }
 
 cpr::AsyncWrapper<std::string, false> Downloader::PostResultAsync(
-    const std::string& url, cpr::Header Header, cpr::Payload payload) {
+    const std::string& url, cpr::Header Header, cpr::Body body) {
   auto response = cpr::PostCallback(
       [](cpr::Response r) {
         try {
@@ -163,7 +156,7 @@ cpr::AsyncWrapper<std::string, false> Downloader::PostResultAsync(
           return r.text;
         }
       },
-      cpr::Url{url}, Header, payload,
+      cpr::Url{url}, Header, body,
       cpr::HttpVersion{cpr::HttpVersionCode::VERSION_2_0_TLS});
   return response;
 }
