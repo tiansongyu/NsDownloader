@@ -10,38 +10,36 @@
 #include "../include/json.hpp"
 namespace baiduyun {
 
-Downloader::Downloader(std::string long_url, std::string pwd,
-                       std::string user_cookes, std::string dir,
-                       std::string file_name)
-    : long_url_(long_url),
-      pwd_(pwd),
-      user_cookes_(user_cookes),
-      dir_(dir),
-      file_name_(file_name) {
-  short_url_ = long_url.substr(1, long_url.length() - 1);
-  std::cout << "short_url_: " << short_url_ << std::endl;
+Downloader::Downloader(std::string url_baidu, std::string user_cookes,
+                       std::string dir, std::string file_name)
+    : user_cookes_(user_cookes), dir_(dir), file_name_(file_name) {
+  std::regex pattern("/s/(\\w+)\\?pwd=(\\w+)");
+  std::smatch match;
+  std::regex_search(url_baidu, match, pattern);
+  long_url_ = match[1];
+  pwd_ = match[2];
+  short_url_ = long_url_.substr(1, long_url_.length() - 1);
   body_randsk_ = {"pwd=" + pwd_};
+
+  user_cookes_ += ";ndut_fmt=";
 
   shareid_uk_url_str_ =
       "https://pan.baidu.com/api/shorturlinfo?shorturl=" + long_url_;
-
   header_ = cpr::Header{
       {"User-Agent",
        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
        "(KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"},
       {"Cookie", user_cookes_},
   };
-
   url_fs_id_ =
       "https://pan.baidu.com/share/"
       "list?order=name&desc=1&showempty=0&web=1&page=1&num=100&clienttype=0&"
       "shorturl=" +
       short_url_ + "&dir=" + dir_;
-
   init();
 }
 
-void Downloader::init() {
+bool Downloader::init() {
   this->SetBdstoken();
   this->SetShareidAndUk();
   this->SetRandsk();
@@ -49,17 +47,20 @@ void Downloader::init() {
   this->SetTimestampAndSign();
   this->SetDlink();
   this->SetLocationLink();
+  return true;
 }
 
-void Downloader::SetBdstoken() {
+bool Downloader::SetBdstoken() {
   bdstoken_ = nlohmann::json::parse(GetBdstoken())["login_info"]["bdstoken"];
   std::cout << "bdstoken_: " << bdstoken_ << std::endl;
+  return true;
 }
-void Downloader::SetRandsk() {
+bool Downloader::SetRandsk() {
   randsk_ = nlohmann::json::parse(GetRandsk())["randsk"];
   std::cout << "randsk_: " << randsk_ << std::endl;
+  return true;
 }
-void Downloader::SetShareidAndUk() {
+bool Downloader::SetShareidAndUk() {
   std::string shareid_and_uk_json = GetShareidAndUk();
   try {
     auto j_shareid = nlohmann::json::parse(shareid_and_uk_json)["shareid"];
@@ -71,9 +72,10 @@ void Downloader::SetShareidAndUk() {
   } catch (const std::exception& e) {
     std::cout << "SetShareidAndUk fault" << std::endl;
   }
+  return true;
 }
 
-void Downloader::SetFsid() {
+bool Downloader::SetFsid() {
   std::string fs_id_json = GetFsid();
   auto item = nlohmann::json::parse(fs_id_json)["list"];
   for (size_t i = 0; i < item.size(); ++i) {
@@ -83,25 +85,28 @@ void Downloader::SetFsid() {
       std::cout << "fs_id_: " << fs_id_ << std::endl;
     }
   }
+  return true;
 }
-void Downloader::SetTimestampAndSign() {
+bool Downloader::SetTimestampAndSign() {
   auto tmp_str = nlohmann::json::parse(GetTimestampAndSign());
   timestamp_ = tmp_str["data"]["timestamp"].dump();
   sign_ = tmp_str["data"]["sign"].dump();
   sign_ = sign_.substr(1, sign_.length() - 2);
   std::cout << "timestamp_: " << timestamp_ << std::endl;
   std::cout << "sign_: " << sign_ << std::endl;
+  return true;
 }
 
-void baiduyun::Downloader::SetDlink() {
+bool baiduyun::Downloader::SetDlink() {
   std::string dlink_json = GetDlink();
   auto item = nlohmann::json::parse(dlink_json)["list"].at(0)["dlink"].dump();
   dlink_ = item.substr(1, item.length() - 2);
 
   std::cout << dlink_ << std::endl;
+  return true;
 }
 
-void baiduyun::Downloader::SetLocationLink() {
+bool baiduyun::Downloader::SetLocationLink() {
   std::string tmp_locationlink = GetLocationLink();
   std::regex re("Location:\\s+(.+)");
   std::smatch match;
@@ -109,6 +114,7 @@ void baiduyun::Downloader::SetLocationLink() {
     location_ = match[1];
   }
   std::cout << "location: " << location_ << std::endl;
+  return true;
 }
 
 bool Downloader::StartDownload() {
@@ -118,13 +124,18 @@ bool Downloader::StartDownload() {
   session.SetUrl(location_);
   file_size_ = session.GetDownloadFileLength();
   file_current_index_ = 0;
+  float progress_old = 0.0F;
   auto r = session.Download(cpr::WriteCallback(
-      [this](std::string data, intptr_t outFile) -> bool {
+      [this, &progress_old](std::string data, intptr_t outFile) -> bool {
         std::ofstream* outFile_tmp = reinterpret_cast<std::ofstream*>(outFile);
         outFile_tmp->write(data.data(), data.size());
         file_current_index_ += data.size();
-        progress_ = file_current_index_ * 100 / file_size_;
-        std::cout << progress_ << "%" << std::endl;
+        float new_progress = file_current_index_ * 100 / file_size_;
+        if (new_progress != progress_old) {
+          progress_ = new_progress;
+          progress_old = progress_;
+          std::cout << progress_ << "%" << std::endl;
+        }
         return true;
       },
       reinterpret_cast<intptr_t>(&outFile)));

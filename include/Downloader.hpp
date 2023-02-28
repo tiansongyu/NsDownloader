@@ -16,10 +16,10 @@ namespace baiduyun {
 
 class Downloader final {
  public:
-  Downloader(std::string long_url, std::string pwd, std::string user_cookes,
-             std::string dir, std::string file_name);
+  Downloader(std::string url_baidu, std::string user_cookes,
+                       std::string dir, std::string file_name);
   ~Downloader() = default;
-  void init();
+
   bool StartDownload();
 
  private:
@@ -33,13 +33,15 @@ class Downloader final {
   std::string dlink_{};
   std::string location_{};
 
-  void SetBdstoken();
-  void SetShareidAndUk();
-  void SetRandsk();
-  void SetFsid();
-  void SetTimestampAndSign();
-  void SetDlink();
-  void SetLocationLink();
+  bool init();
+
+  bool SetBdstoken();
+  bool SetShareidAndUk();
+  bool SetRandsk();
+  bool SetFsid();
+  bool SetTimestampAndSign();
+  bool SetDlink();
+  bool SetLocationLink();
 
   std::string GetBdstoken();
   std::string GetShareidAndUk();
