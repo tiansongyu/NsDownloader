@@ -16,10 +16,11 @@ namespace baiduyun {
 
 class Downloader final {
  public:
-  Downloader(std::string url_baidu, std::string user_cookes,
-                       std::string dir, std::string file_name);
+  Downloader(std::string url_baidu, std::string user_cookes, std::string dir,
+             std::string file_name);
   ~Downloader() = default;
 
+  // blocking function
   bool StartDownload();
 
  private:
@@ -51,15 +52,24 @@ class Downloader final {
   std::string GetDlink();
   std::string GetLocationLink();
 
+  // not use start
+  std::string GetBdstokenAsync();
+  std::string GetShareidAndUkAsync();
+  std::string GetRandskAsync();
+  std::string GetFsidAsync();
+  std::string GetTimestampAndSignAsync();
+  std::string GetDlinkAsync();
+  // not use end
+
   std::string long_url_{};
   std::string short_url_{};
-  cpr::Url shareid_uk_url_str_{};
+  cpr::Url shareid_uk_url_{};
 
-  cpr::Url url_str_{
+  cpr::Url bdstoken_url_{
       "https://pan.baidu.com/api/"
       "loginStatus?clienttype=0&app_id=250528&web=1"};
 
-  cpr::Url url_get_rds_{
+  cpr::Url randsk_url_{
       "https://pan.baidu.com/share/verify?surl=RiOVjWgK3Rlrtsyj0k0iSA"};
   cpr::Header header_refer_{
       {"Referer", "https://pan.baidu.com/wap/init?surl=RiOVjWgK3Rlrtsyj0k0iSA"},
@@ -73,24 +83,24 @@ class Downloader final {
        "like Gecko) Chrome/110.0.0.0 Safari/537.36"}};
 
   std::string pwd_{};
-  cpr::Body body_randsk_{};
+  cpr::Body randsk_body_{};
 
   std::string user_cookes_{};
   std::string dir_{};
   std::string file_name_{};
   cpr::Header header_{};
 
-  cpr::Url url_fs_id_{};
+  cpr::Url fs_id_url_{};
   std::string user_cookies_fs_id_ = "BDCLND=";
 
+  size_t file_size_{0};
+  size_t file_current_index_{0};
+  float progress_{0.0F};
+
+ private:
   static cpr::AsyncWrapper<std::string, false> GetResultAsync(
       const cpr::Url& url, const cpr::Header& Header);
   static cpr::AsyncWrapper<std::string, false> PostResultAsync(
       const cpr::Url& url, const cpr::Header& Header, const cpr::Body& body);
-
-  size_t file_size_{0};
-  size_t file_current_index_{0};
-  std::filesystem::path downloadfilePath_{};
-  float progress_{0.0F};
 };
 }  // namespace baiduyun
