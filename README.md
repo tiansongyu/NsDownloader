@@ -50,12 +50,13 @@ docker run -i -t  -v  /d/dockerfile:/home/data   devkitpro/devkita64  /bin/bash
 - [ns开发仓库](https://github.com/switchbrew/libnx)
 - [ns自制程序官网](https://switchbrew.org/wiki/Main_Page)
 - [ns应用开发指南](https://switch.homebrew.guide/homebrew_dev/app_dev.html)
+- [nx-python文档，ns上运行python](https://nx-python.readthedocs.io/en/latest/index.html)
+
 ### PC端开源ns模拟器，支持linux windows mac所有设备
 - 下载[yuzu](https://yuzu-emu.org/)  
 - 安装yuzu
 - [将yuzu设置为联网模式](https://qianp.com/knowledge/46747.html)
 - 加载nro文件(ns上的应用程序格式)
-- [nx-python文档，ns上运行python](https://nx-python.readthedocs.io/en/latest/index.html)
 
 
 # Acknowledgement
