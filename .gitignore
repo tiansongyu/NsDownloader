@@ -32,3 +32,6 @@
 *.app
 build/
 demo.json
+NsVersion/NsVersion.elf
+NsVersion/NsVersion.nacp
+NsVersion/NsVersion.nro

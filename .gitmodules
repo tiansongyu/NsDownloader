@@ -1,0 +1,3 @@
+[submodule "NsVersion/libs/cpr"]
+	path = NsVersion/libs/cpr
+	url = https://github.com/tiansongyu/cpr.git
