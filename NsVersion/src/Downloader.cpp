@@ -11,8 +11,12 @@
 namespace baiduyun {
 
 Downloader::Downloader(std::string url_baidu, std::string user_cookes,
-                       std::string dir, std::string file_name)
-    : user_cookes_(user_cookes), dir_(dir), file_name_(file_name) {
+                       std::string dir, std::string file_name_in_baiduyun,
+                       std::string file_dirname_in_switch)
+    : user_cookes_(user_cookes),
+      dir_(dir),
+      file_name_in_baiduyun_(file_name_in_baiduyun),
+      file_dirname_in_switch_(file_dirname_in_switch) {
   std::regex pattern("/s/(\\w+)\\?pwd=(\\w+)");
   std::smatch match;
   std::regex_search(url_baidu, match, pattern);
@@ -78,7 +82,7 @@ bool Downloader::SetFsid() {
   auto item = nlohmann::json::parse(fs_id_json_str)["list"];
   for (size_t i = 0; i < item.size(); ++i) {
     auto tmp_str = item.at(i)["server_filename"].dump();
-    if (tmp_str.substr(1, tmp_str.length() - 2) == file_name_) {
+    if (tmp_str.substr(1, tmp_str.length() - 2) == file_name_in_baiduyun_) {
       fs_id_ = item.at(i)["fs_id"].dump();
       std::cout << "fs_id_: " << fs_id_ << std::endl;
     }
@@ -188,7 +192,7 @@ std::string Downloader::GetDlink() {
 bool Downloader::StartDownload() {
   init();
   cpr::Session session;
-  std::ofstream outFile(file_name_, std::ios::binary);
+  std::ofstream outFile(file_dirname_in_switch_, std::ios::binary);
 
   session.SetUrl(location_);
   file_size_ = session.GetDownloadFileLength();

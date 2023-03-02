@@ -27,11 +27,12 @@ void download_test() {
       "db98458575d0ddbd9ecd94424b1a312cdc82ead56919797311045eb9f168b66"
       "3;";
   std::string dir = "/重要文件";
-  std::string file_name = "idmchslsttb.zip";
+  std::string file_name_in_baiduyun = "idmchslsttb.zip";
+  std::string file_name_in_switch = "/config/idmchslsttb.zip";
   std::cout << "start init" << std::endl;
   appletMainLoop();
   auto downloader = std::make_unique<baiduyun::Downloader>(
-      url_baidu, user_cookes, dir, file_name);
+      url_baidu, user_cookes, dir, file_name_in_baiduyun, file_name_in_switch);
   std::cout << "make_unique" << std::endl;
   appletMainLoop();
   downloader->StartDownload();
@@ -79,7 +80,7 @@ int main(int argc, char** argv) {
     if (kDown & HidNpadButton_Plus)
       break;  // break in order to return to hbmenu
     download_test();
-    
+
     consoleUpdate(NULL);
   }
 

@@ -17,7 +17,8 @@ namespace baiduyun {
 class Downloader final {
  public:
   Downloader(std::string url_baidu, std::string user_cookes, std::string dir,
-             std::string file_name);
+             std::string file_name_in_baiduyun,
+             std::string file_dirname_in_switch);
   ~Downloader() = default;
 
   // blocking function
@@ -87,7 +88,8 @@ class Downloader final {
 
   std::string user_cookes_{};
   std::string dir_{};
-  std::string file_name_{};
+  std::string file_name_in_baiduyun_{};
+  std::string file_dirname_in_switch_{};
   cpr::Header header_{};
 
   cpr::Url fs_id_url_{};
