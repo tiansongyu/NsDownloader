@@ -8,8 +8,8 @@ find_package(cpr REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 
-file(GLOB ALLINCLUDEFILES ./src/*.h ./src/*.hpp)
-file(GLOB ALLCPPFILES ./src/*.cpp)
+file(GLOB ALLINCLUDEFILES ./src/*.h ./src/*.hpp ../NsVersion/libs/cpr/include/cpr/*.hpp ../NsVersion/include/*.hpp)
+file(GLOB ALLCPPFILES ./src/*.cpp ../NsVersion/libs/cpr/cpr/*.cpp ../NsVersion/src/Downloader.cpp )
 set(ALL_SOURCES
     ${ALLINCLUDEFILES}
     ${ALLCPPFILES}

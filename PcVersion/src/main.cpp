@@ -4,7 +4,7 @@
 #include <iostream>
 #include <memory>
 
-#include "../include/Downloader.hpp"
+#include "../../NsVersion/include/Downloader.hpp"
 
 int main() {
   std::string url_baidu =
@@ -23,7 +23,7 @@ int main() {
   std::string file_name = "idmchslsttb.zip";
 
   auto downloader = std::make_unique<baiduyun::Downloader>(
-     url_baidu, user_cookes, dir, file_name);
+      url_baidu, user_cookes, dir, file_name, file_name);
 
   downloader->StartDownload();
 
