@@ -1,3 +1,9 @@
 [submodule "NsVersion/libs/cpr"]
 	path = NsVersion/libs/cpr
 	url = https://github.com/tiansongyu/cpr.git
+[submodule "NsVersion/libs/imgui"]
+	path = NsVersion/libs/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "NsVersion/libs/fmt"]
+	path = NsVersion/libs/fmt
+	url = https://github.com/fmtlib/fmt.git

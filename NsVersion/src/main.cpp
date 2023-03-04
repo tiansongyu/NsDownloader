@@ -6,7 +6,8 @@
 #include <string>
 
 #include "../include/Downloader.hpp"
-
+#include "../include/windows.hpp"
+#include "gui.hpp"
 // The SD card is automatically mounted as the default device, usable with
 // standard stdio. SD root dir is located at "/" (also "sdmc:/" but normally
 // using the latter isn't needed). The default current-working-directory when
@@ -39,51 +40,39 @@ void download_test() {
   std::cout << "end" << std::endl;
 }
 
-int main(int argc, char** argv) {
-  consoleInit(NULL);
+namespace Services {
+int Init(void) {
+  Result ret = 0;
 
-  // Configure our supported input layout: a single player with standard
-  // controller styles
-  padConfigureInput(1, HidNpadStyleSet_NpadStandard);
   socketInitializeDefault();
-  nxlinkStdio();  // Redirect stdout and stderr over the network to nxlink
+  nxlinkStdio();
 
-  // Initialize the default gamepad (which reads handheld mode inputs as well as
-  // the first connected controller)
-  PadState pad;
-  padInitializeDefault(&pad);
-
-  DIR* dir;
-  struct dirent* ent;
-
-  dir = opendir("");  // Open current-working-directory.
-  if (dir == NULL) {
-    printf("Failed to open dir.\n");
-  } else {
-    printf("Dir-listing for '':\n");
-    while ((ent = readdir(dir))) {
-      printf("d_name: %s\n", ent->d_name);
-    }
-    closedir(dir);
-    printf("Done.\n");
+  if (R_FAILED(ret = plInitialize(PlServiceType_User))) {
+    std::cout << "plinitialize error" << std::endl;
+    return ret;
   }
 
-  // Main loop
-  while (appletMainLoop()) {
-    // Scan the gamepad. This should be done once for each frame
-    padUpdate(&pad);
+  if (!GUI::Init()) std::cout << "GUI::Init() failed: \n" << std::endl;
 
-    // padGetButtonsDown returns the set of buttons that have been newly pressed
-    // in this frame compared to the previous one
-    u64 kDown = padGetButtonsDown(&pad);
+  plExit();
+  return 0;
+}
 
-    if (kDown & HidNpadButton_Plus)
-      break;  // break in order to return to hbmenu
-    download_test();
+void Exit(void) {
+  GUI::Exit();
+  socketExit();
+}
+}  // namespace Services
 
-    consoleUpdate(NULL);
+int main(int argc, char** argv) {
+  u64 key = 0;
+
+  Services::Init();
+
+  while (GUI::Loop(key)) {
+    Windows::MainWindow(key, false);
+    GUI::Render();
   }
-
-  consoleExit(NULL);
+  Services::Exit();
   return 0;
 }
