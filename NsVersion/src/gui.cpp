@@ -169,7 +169,7 @@ namespace GUI {
         
         // Load nintendo font
         PlFontData standard, extended, chinese, korean;
-        static ImWchar extended_range[] = {0xE000, 0xE152};
+       // static ImWchar extended_range[] = {0xE000, 0xE152};
         
         if ((R_SUCCEEDED(plGetSharedFontByType(std::addressof(standard), PlSharedFontType_Standard))) &&
             R_SUCCEEDED(plGetSharedFontByType(std::addressof(extended), PlSharedFontType_NintendoExt)) &&
