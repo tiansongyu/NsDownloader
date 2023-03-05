@@ -8,11 +8,6 @@
 #include "../include/Downloader.hpp"
 #include "../include/windows.hpp"
 #include "gui.hpp"
-// The SD card is automatically mounted as the default device, usable with
-// standard stdio. SD root dir is located at "/" (also "sdmc:/" but normally
-// using the latter isn't needed). The default current-working-directory when
-// using relative paths is normally the directory where your application is
-// located on the SD card.
 
 void download_test() {
   std::string url_baidu =
