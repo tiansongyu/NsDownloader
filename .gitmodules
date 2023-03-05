@@ -7,6 +7,3 @@
 [submodule "NsVersion/libs/fmt"]
 	path = NsVersion/libs/fmt
 	url = https://github.com/fmtlib/fmt.git
-[submodule "NsVersion/libs/inih"]
-	path = NsVersion/libs/inih
-	url = https://github.com/benhoyt/inih.git

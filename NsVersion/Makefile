@@ -41,7 +41,8 @@ TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
 SOURCES		:=	src src/tabs src/imgui_nx libs/cpr/cpr libs/imgui libs/fmt/src  libs/imgui/misc/freetype libs/json
 DATA		:=	data 
-INCLUDES	:=	include libs/cpr/include include/imgui_nx libs/imgui libs/fmt/include libs/imgui/misc/freetype
+INCLUDES	:=	include libs/cpr/include include/imgui_nx libs/imgui libs/fmt/include libs/imgui/misc/freetype \
+				libs/inih/cpp
 #ROMFS	:=	romfs
 
 #---------------------------------------------------------------------------------
