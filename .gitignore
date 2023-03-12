@@ -35,3 +35,7 @@ demo.json
 *.elf
 *.nacp
 *.nro
+
+# Project
+.vscode
+.xmake

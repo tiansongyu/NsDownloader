@@ -562,21 +562,28 @@ void NetdiskFileManager::__updateDirTree(std::shared_ptr<FNode> fNode, bool bloc
         TinyN_LOGI("start thread to update dir tree...");
 
     } else {
-        
+
         std::lock_guard<std::mutex> al(__mMutex);
-        
+        auto nextLayerFirstNode = fNode;
         std::queue<decltype(fNode)> nodeQ;
-        
+
         nodeQ.push(fNode);
 
-        while (!nodeQ.empty()) {
+        while (!nodeQ.empty() && LayerLimit > 0) {
             auto fN = nodeQ.front(); nodeQ.pop();
-             __mNetdisk->fileListImpl(*fN);
-             for (auto node : fN->files)
-                nodeQ.push(node);
-        }
 
-        __mMutex.unlock();
+            __mNetdisk->fileListImpl(*fN);
+
+            for (auto node : fN->files)
+                if (LayerLimit > 0)
+                    nodeQ.push(node);
+
+            if (nextLayerFirstNode == fN) {
+                LayerLimit--;
+                nextLayerFirstNode = fN->files.front();
+                TinyN_LOGI("enter next layer(lmt %d): %s -> %s", LayerLimit, fN->name.c_str(), nextLayerFirstNode->name.c_str());
+            }
+        }
 
     }
 
